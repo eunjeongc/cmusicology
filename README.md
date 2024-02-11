@@ -1,1 +1,1 @@
-# cmusicology
+# Computational Musicology
