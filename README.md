@@ -9,8 +9,8 @@ As an international student from South Korea, my passion for K-pop extends beyon
 In exploring the relationship between danceability and tempo within the playlists "K-pop ON!" and "Millennium K-pop," it is evident that while no strong correlation exists between the two variables, danceability tends to increase with higher tempo. Additionally, the color-coded points on the scatter plot reveal that current K-pop tracks exhibit significantly higher popularity compared to tracks in the Millennium playlist. 
 
 <p float="left">
-  <img src="https://github.com/eunjeongc/cmusicology/assets/126684614/871c1051-2b04-46a3-85fc-d438b3adedaa" width="100" />
-  <img src="https://github.com/eunjeongc/cmusicology/assets/126684614/a42d8ada-42a2-4a98-8d00-819994cd9482" width="100" />
+  <img src="https://github.com/eunjeongc/cmusicology/assets/126684614/871c1051-2b04-46a3-85fc-d438b3adedaa" width="500" />
+  <img src="https://github.com/eunjeongc/cmusicology/assets/126684614/a42d8ada-42a2-4a98-8d00-819994cd9482" width="500" />
 </p>
 
 For a more detailed comparison between the two playlists, histograms were created to visualize the distribution of danceability and tempo. While danceability values remain relatively similar between the two playlists, there is a notable shift in tempo. In the Millennium playlist, there is a distinct preference for a specific tempo, whereas contemporary tracks display a more diverse range, resembling a normal distribution.
