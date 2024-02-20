@@ -13,4 +13,4 @@ In exploring the relationship between danceability and tempo within the playlist
   <img src="https://github.com/eunjeongc/cmusicology/assets/126684614/a42d8ada-42a2-4a98-8d00-819994cd9482" width="500" />
 </p>
 
-For a more detailed comparison between the two playlists, histograms were created to visualize the distribution of danceability and tempo. While danceability values remain relatively similar between the two playlists, there is a notable shift in tempo. In the Millennium playlist, there is a distinct preference for a specific tempo, whereas contemporary tracks display a more diverse range, resembling a normal distribution.
+For a more detailed comparison between the two playlists, histograms were created to visualize the distribution of danceability and tempo. While danceability values remain relatively similar between the two playlists, there is a notable shift in tempo. In the Millennium playlist, there is a distinct preference for a specific tempo, whereas contemporary tracks display a more diverse range, resembling a more symmetrical distribution.
