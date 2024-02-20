@@ -6,7 +6,7 @@ As an international student from South Korea, my passion for K-pop extends beyon
 ## Initial exploration of the corpus 
 ![tempo vs dance](https://github.com/eunjeongc/cmusicology/assets/126684614/7c71f653-df72-4ab1-9d20-5c87faec62c1)
 
-In exploring the relationship between danceability and tempo within the playlists "K-pop ON!" and "Millennium K-pop," it is evident that while no strong correlation exists between the two variables, danceability tends to increase with higher tempo. Additionally, the color-coded points on the scatter plot reveal that current K-pop tracks exhibit significantly higher popularity compared to tracks in the Millennium playlist. 
+In exploring the relationship between danceability and tempo within the playlists "K-pop ON!" and "Millennium K-pop," it is evident that while no strong correlation exists between the two variables, danceability tends to increase with higher tempo. Additionally, the color-coded points on the scatter plot reveal that current K-pop tracks exhibit significantly higher popularity compared to tracks in the Millennium playlist. However, the correlation between track popularity and danceability remains unclear, as no definitive relationship has been established. 
 
 <p float="left">
   <img src="https://github.com/eunjeongc/cmusicology/assets/126684614/871c1051-2b04-46a3-85fc-d438b3adedaa" width="500" />
