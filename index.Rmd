@@ -10,17 +10,116 @@ output:
 library(flexdashboard)
 ```
 
+```{r}
+library(tidyverse)
+library(spotifyr)
+library(compmus)
+library(plotly)
+```
+
+
 ### About my corpus
 As an international student from South Korea, my passion for K-pop extends beyond the contemporary music of my time to include that of the preceding millennium. Over the years, I have observed the transformative changes in K-pop, influenced by advancements in production techniques and the forces of globalization. Notably, the growing collaborations between K-pop and Western artists have resulted in a fusion of diverse musical genres. In particular, I anticipate “Millennium K-pop” and “K-pop ON!” playlists to reveal distinct differences in musical components, including the tempo and rhythm, instrumentation trends, and melodic content. Upon reviewing the Spotify-curated playlists, I can conclude that both collections feature tracks that defined their respective eras. It is also important to acknowledge that both playlists maintain consistency by exclusively featuring music from K-pop groups without incorporating other genres like K-hip-hop or K-indie. However, a notable difference lies in the playlist sizes; the “Millennium K-pop” playlist consists of 100 tracks, while “K-pop ON!” features 50 tracks. For the analysis to have a more balanced comparison, it would be beneficial to augment the tracks from the millennium. In conclusion, my objective is to enhance my understanding of how K-pop has evolved by comparing the two playlists on Spotify, each representing different temporal frames - the millennium and the present.
 
 *** 
 
-<iframe src="https://open.spotify.com/playlist/37i9dQZF1DWUoY6Ih7vsxr?si=5f888202df114900" width="100%" height="380" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+<iframe src="https://open.spotify.com/embed/playlist/37i9dQZF1DWUoY6Ih7vsxr?utm_source=generator" width="100%" height="380" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
 
-### Chromagram
+### Corpus exploration
+```{r}
+kpop_mill <- get_playlist_audio_features("", "37i9dQZF1DWUoY6Ih7vsxr")
+kpop_on <- get_playlist_audio_features("", "1y6ywhJxaBAjAQ6Ybmg0kg")
+```
 
 ```{r}
+kpop <-
+  bind_rows(
+    kpop_mill |> mutate(category = "Millennium"),
+    kpop_on |> mutate(category = "ON!")
+  )
+```
 
+```{r}
+ggplot1 <- ggplot(kpop, aes(
+  x = tempo, y = danceability, color = track.popularity)) + 
+  geom_point() +
+  scale_color_continuous(name = "Popularity", trans = "reverse") + 
+  theme_light() +
+  labs(title = "Relationship between Tempo and Danceability: K-pop Millennium vs. K-pop ON!", x = "Tempo", y = "Danceability") + 
+  facet_grid(. ~ playlist_name, scales = "fixed")
+
+ggplotly(ggplot1)
+```
+
+#```{r}
+ggplot(kpop, aes(
+  x = danceability)) + 
+  geom_histogram(binwidth = 0.030) +
+  theme_light() +
+  labs(title = "Distribution of Danceability: K-pop Millennium vs. K-pop ON!", x = "Danceability") + 
+  facet_grid(. ~ playlist_name, scales = "fixed")
+```
+
+#```{r}
+ggplot(kpop, aes(
+  x = tempo)) + 
+  geom_histogram(binwidth = 10) +
+  theme_light() +
+  labs(title = "Distribution of Tempo: K-pop Millennium vs. K-pop ON!", x = "Tempo") + 
+  facet_grid(. ~ playlist_name, scales = "fixed")
+```
+
+### Chromagram
+```{r}
+jungkook <-
+  get_tidy_audio_analysis("2KslE17cAJNHTsI2MI0jb2") |>
+  select(segments) |>
+  unnest(segments) |>
+  select(start, duration, pitches)
+```
+
+```{r}
+jungkook |>
+  mutate(pitches = map(pitches, compmus_normalise, "euclidean")) |>
+  compmus_gather_chroma() |> 
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = pitch_class,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(x = "Time (s)", y = NULL, fill = "Magnitude") +
+  theme_minimal() +
+  scale_fill_viridis_c()
+```
+
+```{r}
+psy <-
+  get_tidy_audio_analysis("03UrZgTINDqvnUMbbIMhql") |>
+  select(segments) |>
+  unnest(segments) |>
+  select(start, duration, pitches)
+```
+
+```{r}
+psy |>
+  mutate(pitches = map(pitches, compmus_normalise, "euclidean")) |>
+  compmus_gather_chroma() |> 
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = pitch_class,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(x = "Time (s)", y = NULL, fill = "Magnitude") +
+  theme_minimal() +
+  scale_fill_viridis_c()
 ```
 
 ### Section 3
