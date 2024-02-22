@@ -15,6 +15,7 @@ library(tidyverse)
 library(spotifyr)
 library(compmus)
 library(plotly)
+library(gridExtra)
 ```
 
 
@@ -25,7 +26,7 @@ As an international student from South Korea, my passion for K-pop extends beyon
 
 <iframe src="https://open.spotify.com/embed/playlist/37i9dQZF1DWUoY6Ih7vsxr?utm_source=generator" width="100%" height="380" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
 
-### Corpus exploration
+### Do more people listen to K-pop now than before?
 ```{r}
 kpop_mill <- get_playlist_audio_features("", "37i9dQZF1DWUoY6Ih7vsxr")
 kpop_on <- get_playlist_audio_features("", "1y6ywhJxaBAjAQ6Ybmg0kg")
@@ -51,23 +52,34 @@ ggplot1 <- ggplot(kpop, aes(
 ggplotly(ggplot1)
 ```
 
-#```{r}
-ggplot(kpop, aes(
-  x = danceability)) + 
-  geom_histogram(binwidth = 0.030) +
-  theme_light() +
-  labs(title = "Distribution of Danceability: K-pop Millennium vs. K-pop ON!", x = "Danceability") + 
-  facet_grid(. ~ playlist_name, scales = "fixed")
-```
+***
+In exploring the relationship between danceability and tempo within the playlists "K-pop ON!" and "Millennium K-pop," it is evident that while no strong correlation exists between the two variables, danceability tends to increase with higher tempo. Additionally, the color-coded points on the scatter plot reveal that current K-pop tracks exhibit significantly higher popularity compared to tracks in the Millennium playlist. However, the correlation between track popularity and danceability remains unclear, as no definitive relationship has been established.
 
-#```{r}
-ggplot(kpop, aes(
+### Is there a noteable difference in the distribution of tempo and danceability between the two playlists?
+```{r}
+tempo <- ggplot(kpop, aes(
   x = tempo)) + 
   geom_histogram(binwidth = 10) +
   theme_light() +
-  labs(title = "Distribution of Tempo: K-pop Millennium vs. K-pop ON!", x = "Tempo") + 
+  labs(title = "Distribution of Tempo", x = "Tempo") + 
   facet_grid(. ~ playlist_name, scales = "fixed")
 ```
+
+```{r}
+danceability <- ggplot(kpop, aes(
+  x = danceability)) + 
+  geom_histogram(binwidth = 0.030) +
+  theme_light() +
+  labs(title = "Distribution of Danceability", x = "Danceability") + 
+  facet_grid(. ~ playlist_name, scales = "fixed")
+```
+
+```{r}
+grid.arrange(tempo, danceability, ncol=2)
+```
+
+***
+For a more detailed comparison between the two playlists, histograms were created to visualize the distribution of danceability and tempo. While danceability values remain relatively similar between the two playlists, there is a notable shift in tempo. In the Millennium playlist, there is a distinct preference for a specific tempo, whereas contemporary tracks display a more diverse range, resembling a more symmetrical distribution.
 
 ### Chromagram
 ```{r}
@@ -79,7 +91,8 @@ jungkook <-
 ```
 
 ```{r}
-jungkook |>
+jungkook_chrom <- 
+  jungkook |>
   mutate(pitches = map(pitches, compmus_normalise, "euclidean")) |>
   compmus_gather_chroma() |> 
   ggplot(
@@ -91,7 +104,7 @@ jungkook |>
     )
   ) +
   geom_tile() +
-  labs(x = "Time (s)", y = NULL, fill = "Magnitude") +
+  labs(title = "Chromagram of Standing Next to You", x = "Time (s)", y = NULL, fill = "Magnitude") +
   theme_minimal() +
   scale_fill_viridis_c()
 ```
@@ -105,7 +118,8 @@ psy <-
 ```
 
 ```{r}
-psy |>
+psy_chrom <- 
+  psy |>
   mutate(pitches = map(pitches, compmus_normalise, "euclidean")) |>
   compmus_gather_chroma() |> 
   ggplot(
@@ -117,10 +131,15 @@ psy |>
     )
   ) +
   geom_tile() +
-  labs(x = "Time (s)", y = NULL, fill = "Magnitude") +
+  labs(title = "Chromagram of Gangnam Style", x = "Time (s)", y = NULL, fill = "Magnitude") +
   theme_minimal() +
   scale_fill_viridis_c()
 ```
 
-### Section 3
+```{r}
+grid.arrange(jungkook_chrom, psy_chrom, ncol=1)
+```
+
+***
+Add explanation.
 
