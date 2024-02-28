@@ -265,6 +265,6 @@ wgirls_timbre |>
 ```
 
 ***
-In this comparison, I analyze the cepstrograms of two tracks from the playlists "K-pop ON!" and K-pop Millennium." Upon examining the visualizations, a noteable distinction emerges between "Standing Next to You" and "Tell Me." The cepstrogram of "Standing Next to You" reveals a diverse magnitude spectrum, indicating in a broad range of instrumentation in use. On the other hand, "Tell Me" exhibits a consistent color frame throught the song, indicative of a relatively uniform timbre.
+In this comparison, I analyze the cepstrograms of two tracks from the playlists "K-pop ON!" and K-pop Millennium." Upon examining the visualizations, a notable distinction emerges between "Standing Next to You" and "Tell Me." The cepstrogram of "Standing Next to You" reveals a diverse magnitude spectrum, indicating in a broad range of instrumentation in use. On the other hand, "Tell Me" exhibits a consistent color frame throughout the song, indicative of a relatively uniform timbre.
 
 Although there are several potential reasons for these observations, one could be that the advancements in musical technology over the years have enabled producers to incorporate a wider variety of sounds into their compositions. Such technological progress contributes to the diverse magnitude seen in "Standing Next to You." Moreover, the consistent timbre in "Tell Me" may be attributed to the track's relatively simple and repeating musical structure, lacking significant deviations from its main melodic line.
