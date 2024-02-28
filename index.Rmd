@@ -28,7 +28,7 @@ As an international student from South Korea, my passion for K-pop extends beyon
 
 ### Do more people listen to K-pop now than before?
 ```{r}
-kpop_mill <- get_playlist_audio_features("", "37i9dQZF1DWUoY6Ih7vsxr")
+kpop_mill <- get_playlist_audio_features("", "2d9N60Iz8yzdsWLP1crgd2")
 kpop_on <- get_playlist_audio_features("", "1y6ywhJxaBAjAQ6Ybmg0kg")
 ```
 
@@ -42,15 +42,16 @@ kpop <-
 
 ```{r}
 ggplot1 <- ggplot(kpop, aes(
-  x = tempo, y = danceability, color = track.popularity)) + 
+  x = tempo, y = danceability, color = track.popularity, text = track.name)) + 
   geom_point() +
   scale_color_continuous(name = "Popularity", trans = "reverse") + 
   theme_light() +
   labs(title = "Relationship between Tempo and Danceability: K-pop Millennium vs. K-pop ON!", x = "Tempo", y = "Danceability") + 
-  facet_grid(. ~ playlist_name, scales = "fixed")
+  facet_grid(. ~ playlist_name, scales = "fixed") 
 
 ggplotly(ggplot1)
 ```
+
 
 ***
 In exploring the relationship between danceability and tempo within the playlists "K-pop ON!" and "Millennium K-pop," it is evident that while no strong correlation exists between the two variables, danceability tends to increase with higher tempo. Additionally, the color-coded points on the scatter plot reveal that current K-pop tracks exhibit significantly higher popularity compared to tracks in the Millennium playlist. However, the correlation between track popularity and danceability remains unclear, as no definitive relationship has been established.
@@ -110,16 +111,16 @@ jungkook_chrom <-
 ```
 
 ```{r}
-psy <-
-  get_tidy_audio_analysis("03UrZgTINDqvnUMbbIMhql") |>
+wgirls <-
+  get_tidy_audio_analysis("2UuKZDzjZ7cVMOvpmuAMYj") |>
   select(segments) |>
   unnest(segments) |>
   select(start, duration, pitches)
 ```
 
 ```{r}
-psy_chrom <- 
-  psy |>
+wgirls_chrom <- 
+  wgirls |>
   mutate(pitches = map(pitches, compmus_normalise, "euclidean")) |>
   compmus_gather_chroma() |> 
   ggplot(
@@ -131,15 +132,139 @@ psy_chrom <-
     )
   ) +
   geom_tile() +
-  labs(title = "Chromagram of Gangnam Style", x = "Time (s)", y = NULL, fill = "Magnitude") +
+  labs(title = "Chromagram of Tell Me", x = "Time (s)", y = NULL, fill = "Magnitude") +
   theme_minimal() +
   scale_fill_viridis_c()
 ```
 
 ```{r}
-grid.arrange(jungkook_chrom, psy_chrom, ncol=1)
+grid.arrange(jungkook_chrom, wgirls_chrom, ncol=1)
 ```
 
 ***
-Add explanation.
+I have extracted the chromagrams of two highly popular tracks from different playlists. The first chromagram represents "Standing Next to You" by Jungkook, featuring dominant notes C#/Db, D, and A. In contrast, the second chromagram depicts "Tell Me" by Wonder Girls, showing dominant notes C#/Db, F#/Gb, and B. A notable distinction emerges when comparing the two: "Standing Next to You" displays a more colorful chromagram, suggesting a diverse range of pitches and a potentially more complex harmonic structure. Furthermore, it appears that "Standing Next to You" has a clearer musical structure, with recurring patterns emphasizing its melodic motifs. It is important to note that these insights are specific to the tracks "Standing Next to You" and "Tell Me" and should not be generalized to comparisons between music from different eras, such as the millennium and the present.
 
+### Two different versions of the same track
+```{r}
+cupid <-
+  get_tidy_audio_analysis("5mg3VB3Qh7jcR5kAAC4DSV") |>
+  select(segments) |>
+  unnest(segments) |>
+  select(start, duration, pitches)
+
+cupid_sabrina <-
+  get_tidy_audio_analysis("28PCjIXE4NJWDIqpRsD3rl") |>
+  select(segments) |>
+  unnest(segments) |>
+  select(start, duration, pitches)
+```
+
+```{r}
+compmus_long_distance(
+  cupid |> mutate(pitches = map(pitches, compmus_normalise, "euclidean")),
+  cupid_sabrina |> mutate(pitches = map(pitches, compmus_normalise, "euclidean")),
+  feature = pitches,
+  method = "cosine"
+) |>
+  ggplot(
+    aes(
+      x = xstart + xduration / 2,
+      width = xduration,
+      y = ystart + yduration / 2,
+      height = yduration,
+      fill = d
+    )
+  ) +
+  geom_tile() +
+  coord_equal() +
+  labs(x = "Cupid - FIFTY FIFTY", y = "Cupid - FIFTY FIFTY, Sabrina Carpenter", title = "Comparative Chromagram Analysis: Two Versions of 'Cupid'") +
+  theme_minimal() +
+  scale_fill_viridis_c(guide = NULL)
+```
+
+***
+For a more in-depth analysis, I compare the chroma vectors of two different versions of the same track. On the x-axis, we have the original song, "Cupid" by FIFTY FIFTY, and on the y-axis, the remixed version featuring Sabrina Carpenter. After experimenting with various combinations of normalization and distance method, the chosen configuration involves the Euclidean normalization method paired with the cosine distance method for the final visualization. Despite the presence of a diagonal line on the graph, it lacks the intensity to indicate a strong correlation between the two versions. Additionally, the checkerboard pattern suggests potential differences between the two tracks. For instance, the remix may introduce additional chords or variations on existing chords, resulting in discrepancies in note magnitude.
+
+### Cepstrograms
+```{r}
+jungkook_timbre <-
+  get_tidy_audio_analysis("2KslE17cAJNHTsI2MI0jb2") |> # Change URI.
+  compmus_align(bars, segments) |>                     # Change `bars`
+  select(bars) |>                                      #   in all three
+  unnest(bars) |>                                      #   of these lines.
+  mutate(
+    pitches =
+      map(segments,
+        compmus_summarise, pitches,
+        method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  ) |>
+  mutate(
+    timbre =
+      map(segments,
+        compmus_summarise, timbre,
+        method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  )
+```
+
+```{r}
+jungkook_timbre |>
+  compmus_gather_timbre() |>
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = basis,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(x = "Time (s)", y = NULL, fill = "Magnitude") +
+  scale_fill_viridis_c() +                              
+  theme_classic()
+```
+
+```{r}
+wgirls_timbre <-
+  get_tidy_audio_analysis("2UuKZDzjZ7cVMOvpmuAMYj") |> # Change URI.
+  compmus_align(bars, segments) |>                     # Change `bars`
+  select(bars) |>                                      #   in all three
+  unnest(bars) |>                                      #   of these lines.
+  mutate(
+    pitches =
+      map(segments,
+        compmus_summarise, pitches,
+        method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  ) |>
+  mutate(
+    timbre =
+      map(segments,
+        compmus_summarise, timbre,
+        method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  )
+```
+
+```{r}
+wgirls_timbre |>
+  compmus_gather_timbre() |>
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = basis,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(x = "Time (s)", y = NULL, fill = "Magnitude") +
+  scale_fill_viridis_c() +                              
+  theme_classic()
+```
+
+***
+In this comparison, I analyze the cepstrograms of two tracks from the playlists "K-pop ON!" and K-pop Millennium." Upon examining the visualizations, a noteable distinction emerges between "Standing Next to You" and "Tell Me." The cepstrogram of "Standing Next to You" reveals a diverse magnitude spectrum, indicating in a broad range of instrumentation in use. On the other hand, "Tell Me" exhibits a consistent color frame throught the song, indicative of a relatively uniform timbre.
+
+Although there are several potential reasons for these observations, one could be that the advancements in musical technology over the years have enabled producers to incorporate a wider variety of sounds into their compositions. Such technological progress contributes to the diverse magnitude seen in "Standing Next to You." Moreover, the consistent timbre in "Tell Me" may be attributed to the track's relatively simple and repeating musical structure, lacking significant deviations from its main melodic line.
