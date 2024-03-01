@@ -16,7 +16,95 @@ library(spotifyr)
 library(compmus)
 library(plotly)
 library(gridExtra)
-library(patchwork)
+```
+
+### Has the use of instrumentation developed since the millennium in K-pop?
+
+```{r}
+jungkook_timbre <-
+  get_tidy_audio_analysis("2KslE17cAJNHTsI2MI0jb2") |> # Change URI.
+  compmus_align(bars, segments) |>                     # Change `bars`
+  select(bars) |>                                      #   in all three
+  unnest(bars) |>                                      #   of these lines.
+  mutate(
+    pitches =
+      map(segments,
+        compmus_summarise, pitches,
+        method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  ) |>
+  mutate(
+    timbre =
+      map(segments,
+        compmus_summarise, timbre,
+        method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  )
+```
+
+```{r}
+jungkook_timbre |>
+  compmus_gather_timbre() |>
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = basis,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(x = "Time (s)", y = NULL, fill = "Magnitude", title = "Cepstrogram of 'Standing Next to You (2023)'") +
+  scale_fill_viridis_c() +                              
+  theme_classic()
+```
+
+------------------------------------------------------------------------
+
+In this comparison, I analyze the cepstrograms of two tracks from the playlists "K-pop ON!" and K-pop Millennium." Upon examining the visualizations, a notable distinction emerges between "Standing Next to You" and "Tell Me." The cepstrogram of "Standing Next to You" reveals a diverse magnitude spectrum, indicating in a broad range of instrumentation in use. On the other hand, "Tell Me" exhibits a consistent color frame throughout the song, indicative of a relatively uniform timbre.
+
+Although there are several potential reasons for these observations, one could be that the advancements in musical technology over the years have enabled producers to incorporate a wider variety of sounds into their compositions. Such technological progress contributes to the diverse magnitude seen in "Standing Next to You." Moreover, the consistent timbre in "Tell Me" may be attributed to the track's relatively simple and repeating musical structure, lacking significant deviations from its main melodic line.
+
+**Couldn't get to put the cepstrograms one below another, so the 'Tell Me (2007)' cepstrogram is in another tab for now.
+
+### Tell Me (2007) Cepstrogram
+```{r}
+wgirls_timbre <-
+  get_tidy_audio_analysis("2UuKZDzjZ7cVMOvpmuAMYj") |> # Change URI.
+  compmus_align(bars, segments) |>                     # Change `bars`
+  select(bars) |>                                      #   in all three
+  unnest(bars) |>                                      #   of these lines.
+  mutate(
+    pitches =
+      map(segments,
+        compmus_summarise, pitches,
+        method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  ) |>
+  mutate(
+    timbre =
+      map(segments,
+        compmus_summarise, timbre,
+        method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  )
+```
+
+```{r}
+wgirls_timbre |>
+  compmus_gather_timbre() |>
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = basis,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(x = "Time (s)", y = NULL, fill = "Magnitude", title = "Cepstrogram of 'Tell Me (2007)'") +
+  scale_fill_viridis_c() +                              
+  theme_classic()
 ```
 
 ### About my corpus
@@ -198,92 +286,3 @@ compmus_long_distance(
 
 For a more in-depth analysis, I compare the chroma vectors of two different versions of the same track. On the x-axis, we have the original song, "Cupid" by FIFTY FIFTY, and on the y-axis, the remixed version featuring Sabrina Carpenter. After experimenting with various combinations of normalization and distance method, the chosen configuration involves the Euclidean normalization method paired with the cosine distance method for the final visualization. Despite the presence of a diagonal line on the graph, it lacks the intensity to indicate a strong correlation between the two versions. Additionally, the checkerboard pattern suggests potential differences between the two tracks. For instance, the remix may introduce additional chords or variations on existing chords, resulting in discrepancies in note magnitude.
 
-### Has the use of instrumentation developed since the millennium in K-pop?
-
-```{r}
-jungkook_timbre <-
-  get_tidy_audio_analysis("2KslE17cAJNHTsI2MI0jb2") |> # Change URI.
-  compmus_align(bars, segments) |>                     # Change `bars`
-  select(bars) |>                                      #   in all three
-  unnest(bars) |>                                      #   of these lines.
-  mutate(
-    pitches =
-      map(segments,
-        compmus_summarise, pitches,
-        method = "rms", norm = "euclidean"              # Change summary & norm.
-      )
-  ) |>
-  mutate(
-    timbre =
-      map(segments,
-        compmus_summarise, timbre,
-        method = "rms", norm = "euclidean"              # Change summary & norm.
-      )
-  )
-```
-
-```{r}
-jungkook_timbre |>
-  compmus_gather_timbre() |>
-  ggplot(
-    aes(
-      x = start + duration / 2,
-      width = duration,
-      y = basis,
-      fill = value
-    )
-  ) +
-  geom_tile() +
-  labs(x = "Time (s)", y = NULL, fill = "Magnitude", title = "Cepstrogram of 'Standing Next to You (2023)'") +
-  scale_fill_viridis_c() +                              
-  theme_classic()
-```
-
-```{r}
-wgirls_timbre <-
-  get_tidy_audio_analysis("2UuKZDzjZ7cVMOvpmuAMYj") |> # Change URI.
-  compmus_align(bars, segments) |>                     # Change `bars`
-  select(bars) |>                                      #   in all three
-  unnest(bars) |>                                      #   of these lines.
-  mutate(
-    pitches =
-      map(segments,
-        compmus_summarise, pitches,
-        method = "rms", norm = "euclidean"              # Change summary & norm.
-      )
-  ) |>
-  mutate(
-    timbre =
-      map(segments,
-        compmus_summarise, timbre,
-        method = "rms", norm = "euclidean"              # Change summary & norm.
-      )
-  )
-```
-
-```{r}
-wgirls_timbre |>
-  compmus_gather_timbre() |>
-  ggplot(
-    aes(
-      x = start + duration / 2,
-      width = duration,
-      y = basis,
-      fill = value
-    )
-  ) +
-  geom_tile() +
-  labs(x = "Time (s)", y = NULL, fill = "Magnitude", title = "Cepstrogram of 'Tell Me (2007)'") +
-  scale_fill_viridis_c() +                              
-  theme_classic()
-```
-
-```{r}
-grid.arrange(jungkook_timbre, wgirls_timbre, ncol = 1)
-```
-
-------------------------------------------------------------------------
-
-In this comparison, I analyze the cepstrograms of two tracks from the playlists "K-pop ON!" and K-pop Millennium." Upon examining the visualizations, a notable distinction emerges between "Standing Next to You" and "Tell Me." The cepstrogram of "Standing Next to You" reveals a diverse magnitude spectrum, indicating in a broad range of instrumentation in use. On the other hand, "Tell Me" exhibits a consistent color frame throughout the song, indicative of a relatively uniform timbre.
-
-Although there are several potential reasons for these observations, one could be that the advancements in musical technology over the years have enabled producers to incorporate a wider variety of sounds into their compositions. Such technological progress contributes to the diverse magnitude seen in "Standing Next to You." Moreover, the consistent timbre in "Tell Me" may be attributed to the track's relatively simple and repeating musical structure, lacking significant deviations from its main melodic line.
