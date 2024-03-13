@@ -18,6 +18,66 @@ library(plotly)
 library(gridExtra)
 ```
 
+### Does the tempo of K-pop tracks match the diverse range of genres it references? 
+
+```{r}
+jungkook_tempo <- get_tidy_audio_analysis("2KslE17cAJNHTsI2MI0jb2")
+```
+
+```{r}
+jungkook_tempo |>
+  tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) |>
+  ggplot(aes(x = time, y = bpm, fill = power)) +
+  geom_raster() +
+  scale_fill_viridis_c(guide = "none") +
+  labs(x = "Time (s)", y = "Tempo (BPM)", title = "Tempogram of 'Standing Next to You (2023)'") +
+  theme_classic()
+```
+
+------------------------------------------------------------------------------------
+
+Comparison between the two tracks can be found in the next tab.
+
+### Does the tempo of K-pop tracks match the diverse range of genres it references? (2) 
+
+```{r}
+wgirls_tempo <- get_tidy_audio_analysis("2UuKZDzjZ7cVMOvpmuAMYj")
+```
+
+```{r}
+wgirls_tempo |>
+  tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) |>
+  ggplot(aes(x = time, y = bpm, fill = power)) +
+  geom_raster() +
+  scale_fill_viridis_c(guide = "none") +
+  labs(x = "Time (s)", y = "Tempo (BPM)", title = "Tempogram of 'Tell Me (2007)'") +
+  theme_classic()
+```
+
+------------------------------------------------------------------------------------
+
+The tempo variation in 'Standing Next to You' exhibits greater diversity, with fluctuations between 105 bpm, 135 bpm, and 145 bpm. [Other sources](https://songbpm.com/@jung-kook/standing-next-to-you-X_F-hVBltl) confirm that the track's tempo is 106 bpm, aligning with Spotify's data. Such tempo variation reflects the dynamic nature of the jazz-funk genre, typically ranging between [90-110 bpm.](https://splice.com/blog/genre-focus-series-funk-with-splice-sounds/#:~:text=Tempo%20%26%20Meter%3A%20Most%20funk%20songs,dirty%20on%20the%20dance%20floor.) Conversely, 'Tell Me' maintains a consistent tempo of 125 bpm throughout, as confirmed by [additional source](https://songbpm.com/@wonder-girls/tell-me) indicating 127bpm. This tempo corresponds to the steady pace characteristic of disco, which typically centers around [120 bpm.](esounds.html#:~:text=The%20basic%20tempo%20of%20disco,the%20gaps%20between%20the%20beats.)
+
+### Does the tempo of K-pop tracks match the diverse range of genres it references? (3)
+
+```{r}
+jungkook_remix_tempo <- get_tidy_audio_analysis("0VPFT123HKoQ2J6ipeDcI1")
+```
+
+```{r}
+jungkook_remix_tempo |>
+  tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) |>
+  ggplot(aes(x = time, y = bpm, fill = power)) +
+  geom_raster() +
+  scale_fill_viridis_c(guide = "none") +
+  labs(x = "Time (s)", y = "Tempo (BPM)", title = "Tempogram of 'Standing Next to You Remix (2023)'") +
+  theme_classic()
+```
+
+------------------------------------------------------------------------------------
+
+While there aren't significant differences in tempo between 'Standing Next to You' and the its remixed version featuring USHER, fluctuations occur notably around 110 and 150 seconds, coinciding with the initiation of USHER's vocal. His segment, characterized by a softer, laid-back vibe, temporarily reduces the tempo to approximately 90 bpm before and after the 150-second mark. Apart from these minor fluctuations, the main tempo remains consistent around 105 bpm, as indicated by a strong, straight line.
+
 ### What accounts for the prevalent use of seventh chords in K-pop songs?
 
 ```{r}
@@ -142,7 +202,7 @@ jungkook_chord |>
 
 ------------------------------------------------------------------------------------
 
-Comparison between the two different tracks can be found in the next tab.
+Comparison between the two tracks can be found in the next tab.
 
 ### What accounts for the prevalent use of seventh chords in K-pop songs? (2)
 
@@ -267,13 +327,10 @@ jungkook_timbre |>
 
 ------------------------------------------------------------------------
 
-In this comparison, I analyze the cepstrograms of two tracks from the playlists "K-pop ON!" and K-pop Millennium." Upon examining the visualizations, a notable distinction emerges between "Standing Next to You" and "Tell Me." The cepstrogram of "Standing Next to You" reveals a diverse magnitude spectrum, indicating in a broad range of instrumentation in use. On the other hand, "Tell Me" exhibits a consistent color frame throughout the song, indicative of a relatively uniform timbre.
+Comparison between the two tracks can be found in the next tab.
 
-Although there are several potential reasons for these observations, one could be that the advancements in musical technology over the years have enabled producers to incorporate a wider variety of sounds into their compositions. Such technological progress contributes to the diverse magnitude seen in "Standing Next to You." Moreover, the consistent timbre in "Tell Me" may be attributed to the track's relatively simple and repeating musical structure, lacking significant deviations from its main melodic line.
+### Has the use of instrumentation developed since the millennium in K-pop? (2)
 
-**Couldn't get to put the cepstrograms one below another, so the 'Tell Me (2007)' cepstrogram is in another tab for now.
-
-### Tell Me (2007) Cepstrogram
 ```{r}
 wgirls_timbre <-
   get_tidy_audio_analysis("2UuKZDzjZ7cVMOvpmuAMYj") |> # Change URI.
@@ -312,6 +369,12 @@ wgirls_timbre |>
   scale_fill_viridis_c() +                              
   theme_classic()
 ```
+
+------------------------------------------------------------------------
+
+In this comparison, I analyze the cepstrograms of two tracks from the playlists "K-pop ON!" and K-pop Millennium." Upon examining the visualizations, a notable distinction emerges between "Standing Next to You" and "Tell Me." The cepstrogram of "Standing Next to You" reveals a diverse magnitude spectrum, indicating in a broad range of instrumentation in use. On the other hand, "Tell Me" exhibits a consistent color frame throughout the song, indicative of a relatively uniform timbre.
+
+Although there are several potential reasons for these observations, one could be that the advancements in musical technology over the years have enabled producers to incorporate a wider variety of sounds into their compositions. Such technological progress contributes to the diverse magnitude seen in "Standing Next to You." Moreover, the consistent timbre in "Tell Me" may be attributed to the track's relatively simple and repeating musical structure, lacking significant deviations from its main melodic line.
 
 ### About my corpus
 As an international student from South Korea, my passion for K-pop extends beyond the contemporary music of my time to include that of the preceding millennium. Over the years, I have observed the transformative changes in K-pop, influenced by advancements in production techniques and the forces of globalization. Notably, the growing collaborations between K-pop and Western artists have resulted in a fusion of diverse musical genres. In particular, I anticipate “Millennium K-pop” and “K-pop ON!” playlists to reveal distinct differences in musical components, including the tempo and rhythm, instrumentation trends, and melodic content. Upon reviewing the Spotify-curated playlists, I can conclude that both collections feature tracks that defined their respective eras. It is also important to acknowledge that both playlists maintain consistency by exclusively featuring music from K-pop groups without incorporating other genres like K-hip-hop or K-indie. However, a notable difference lies in the playlist sizes; the “Millennium K-pop” playlist consists of 100 tracks, while “K-pop ON!” features 50 tracks. For the analysis to have a more balanced comparison, it would be beneficial to augment the tracks from the millennium. In conclusion, my objective is to enhance my understanding of how K-pop has evolved by comparing the two playlists on Spotify, each representing different temporal frames - the millennium and the present.
