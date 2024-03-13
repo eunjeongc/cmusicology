@@ -3,6 +3,7 @@ title: "Portfolio for Computational Musicology 2024"
 author: Sally Choi
 output: 
   flexdashboard::flex_dashboard:
+    storyboard: true
 ---
 
 ```{r setup, include=FALSE}
@@ -17,11 +18,7 @@ library(plotly)
 library(gridExtra)
 ```
 
-What accounts for the prevalent use of seventh chords in K-pop songs? {.storyboard}
-
-==========================================================================
-
-### Chordogram of 'Standing Next to You (2023)' by Jung Kook
+### What accounts for the prevalent use of seventh chords in K-pop songs?
 
 ```{r}
 circshift <- function(v, n) {
@@ -143,10 +140,11 @@ jungkook_chord |>
   labs(x = "Time (s)", y = "", title = "Chordogram of 'Standing Next to You (2023)'")
 ```
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------------
+
 Comparison between the two different tracks can be found in the next tab.
 
-### Chordogram of 'Tell Me (2007)' by Wonder Girls
+### What accounts for the prevalent use of seventh chords in K-pop songs? (2)
 
 ```{r}
 wgirls_chord <-
@@ -180,12 +178,15 @@ wgirls_chord |>
   labs(x = "Time (s)", y = "", title = "Chordogram of 'Tell Me (2007)'")
 ```
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------------
+
 Continuing the comparative analysis of 'Standing Next to You' and 'Tell Me,' I have visualized the chordograms for both tracks. In contrast to the chromagram or cepstrogram, these chordograms reveal a notable similarity in the primary chords, with seventh chords being prominently featured. For instance, 'Standing Next to You' incorporates chords like B:7, E:7, A:7, and D:7, mirroring the seventh chords found in 'Tell Me,' such as B:7, D:7, Ab:7, and Gb:7.
 
 Seventh chords, commonly found in modern music, especially jazz, play a noticeable role in both tracks. The prevalence of seventh chords in 'Standing Next to You' aligns with its jazz-funk and disco-pop influences. Similarly, 'Tell Me,' categorized as disco, extensively employs seventh chords, underscoring their significance in the genre.
 
-### Chordogram of 'Easy (2024)' by LE SSERAFIM
+------------------------------------------------------------------------------------
+
+### What accounts for the prevalent use of seventh chords in K-pop songs? (3)
 
 ```{r}
 easy_chord <-
@@ -220,6 +221,7 @@ easy_chord |>
 ```
 
 ------------------------------------------------------------------------
+
 To delve deeper into the relationship between seventh chords and K-pop, I examined a recent release, 'Easy,' by LE SSERAFIM, identified as R&B trap. Surprisingly, the dominance of seventh chords persists, evident in darker lines at A:7, D:7, C:7, and F:7. This suggests a broader trend where seventh chords are commonly utilized in K-pop.
 
 ### Has the use of instrumentation developed since the millennium in K-pop?
