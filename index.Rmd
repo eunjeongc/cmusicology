@@ -21,176 +21,30 @@ library(ggdendro)
 library(heatmaply)
 ```
 
-Classification and Clustering
-=================================================================================
+Corpus
+==================================================================================
+
+Column
+---------------------------------------------------------------------------------
+
+### Explanation of corpus
+As an international student from South Korea, my passion for K-pop extends beyond the contemporary music of my time to include that of the preceding millennium. Over the years, I have observed transformative changes in K-pop, influenced by advancements in production techniques and the forces of globalization. Notably, the growing collaborations between K-pop and Western artists have resulted in a fusion of diverse musical genres. In particular, I anticipate “Millennium K-pop” and “K-pop ON!” playlists to reveal distinct differences in musical components, including the tempo and rhythm, instrumentation trends, and melodic content. Upon reviewing the Spotify-curated playlists, I can conclude that both collections feature tracks that defined their respective eras. It is also important to acknowledge that both playlists maintain consistency by exclusively featuring music from K-pop groups without incorporating other genres like K-hip-hop or K-indie. However, a notable difference lies in the playlist sizes; the “Millennium K-pop” playlist consists of 100 tracks, while “K-pop ON!” features 50 tracks. For a more balanced comparison, I expanded the "K-pop ON!" playlist to include more tracks released between 2023 and 2024. Both playlists also have a popularity threshold, with tracks requiring to exceed 50 for "K-pop ON!" and 40 for “Millennium K-pop,” ensuring that the tracks are representative of their respective time frames. In the end, my objective is to deepen my understanding of how K-pop has evolved by comparing the two playlists on Spotify, each representing different temporal frames - the millennium and the present.
+
+Column
+---------------------------------------------------------------------------------
+<iframe src="https://open.spotify.com/embed/playlist/37i9dQZF1DWUoY6Ih7vsxr?utm_source=generator" width="100%" height="380" frameBorder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+
+
+Exploration
+==================================================================================
 
 Column {.tabset}
---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
 
 ### Chart A
 ```{r}
-kpop_on <- get_playlist_audio_features("spotify", "1y6ywhJxaBAjAQ6Ybmg0kg")
-kpop_mill <- get_playlist_audio_features("spotify", "2d9N60Iz8yzdsWLP1crgd2")
-kpop <-
-  bind_rows(
-    kpop_on |> mutate(playlist = "ON!") |> slice_head(n = 20),
-    kpop_mill |> mutate(playlist = "Millennium") |> slice_head(n = 20),
-  ) |> 
-  add_audio_analysis()
-```
-
-```{r}
-kpop_features <-
-  kpop |>  # For your portfolio, change this to the name of your corpus.
-  mutate(
-    playlist = factor(playlist),
-    segments = map2(segments, key, compmus_c_transpose),
-    pitches =
-      map(
-        segments,
-        compmus_summarise, pitches,
-        method = "mean", norm = "manhattan"
-      ),
-    timbre =
-      map(
-        segments,
-        compmus_summarise, timbre,
-        method = "mean",
-      )
-  ) |>
-  mutate(pitches = map(pitches, compmus_normalise, "clr")) |>
-  mutate_at(vars(pitches, timbre), map, bind_rows) |>
-  unnest(cols = c(pitches, timbre))
-```
-
-```{r}
-kpop_recipe <-
-  recipe(
-    playlist ~
-      danceability +
-      energy +
-      loudness +
-      speechiness +
-      acousticness +
-      instrumentalness +
-      liveness +
-      valence +
-      tempo +
-      duration +
-      C + `C#|Db` + D + `D#|Eb` +
-      E + `F` + `F#|Gb` + G +
-      `G#|Ab` + A + `A#|Bb` + B +
-      c01 + c02 + c03 + c04 + c05 + c06 +
-      c07 + c08 + c09 + c10 + c11 + c12,
-    data = kpop_features      # Use the same name as the previous block.
-  ) |>
-  step_center(all_predictors()) |>
-  step_scale(all_predictors())      # Converts to z-scores.
-  # step_range(all_predictors())    # Sets range to [0, 1].
-```
-
-```{r}
-kpop_cv <- kpop_features |> vfold_cv(5)
-```
-
-```{r}
-forest_model <-
-  rand_forest() |>
-  set_mode("classification") |> 
-  set_engine("ranger", importance = "impurity")
-kpop_forest <- 
-  workflow() |> 
-  add_recipe(kpop_recipe) |> 
-  add_model(forest_model) |> 
-  fit_resamples(
-    kpop_cv, 
-    control = control_resamples(save_pred = TRUE)
-  )
-```
-
-```{r}
-get_conf_mat <- function(fit) {
-  outcome <- .get_tune_outcome_names(fit)
-  fit |> 
-    collect_predictions() |> 
-    conf_mat(truth = outcome, estimate = .pred_class)
-}  
-
-get_pr <- function(fit) {
-  fit |> 
-    conf_mat_resampled() |> 
-    group_by(Prediction) |> mutate(precision = Freq / sum(Freq)) |> 
-    group_by(Truth) |> mutate(recall = Freq / sum(Freq)) |> 
-    ungroup() |> filter(Prediction == Truth) |> 
-    select(class = Prediction, precision, recall)
-}  
-```
-
-```{r, results='hide'}
-kpop_forest |> get_pr()
-```
-
-```{r}
-workflow() |> 
-  add_recipe(kpop_recipe) |> 
-  add_model(forest_model) |> 
-  fit(kpop_features) |> 
-  pluck("fit", "fit", "fit") |>
-  ranger::importance() |> 
-  enframe() |> 
-  mutate(name = fct_reorder(name, value)) |> 
-  ggplot(aes(name, value)) + 
-  geom_col() + 
-  coord_flip() +
-  theme_minimal() +
-  labs(x = NULL, y = "Importance", title = "Feature Importance of Random Forest")
-```
-
-### Chart B
-```{r}
-kpop_mill <-
-  get_playlist_audio_features("", "2d9N60Iz8yzdsWLP1crgd2") |>
-  add_audio_analysis() |>
-  mutate(
-    segments = map2(segments, key, compmus_c_transpose),
-    pitches =
-      map(segments,
-        compmus_summarise, pitches,
-        method = "mean", norm = "manhattan"
-      ),
-    timbre =
-      map(
-        segments,
-        compmus_summarise, timbre,
-        method = "mean"
-      )
-  ) |>
-  mutate(pitches = map(pitches, compmus_normalise, "clr")) |>
-  mutate_at(vars(pitches, timbre), map, bind_rows) |>
-  unnest(cols = c(pitches, timbre))
-```
-
-```{r}
-kpop_on <-
-  get_playlist_audio_features("", "1y6ywhJxaBAjAQ6Ybmg0kg") |>
-  add_audio_analysis() |>
-  mutate(
-    segments = map2(segments, key, compmus_c_transpose),
-    pitches =
-      map(segments,
-        compmus_summarise, pitches,
-        method = "mean", norm = "manhattan"
-      ),
-    timbre =
-      map(
-        segments,
-        compmus_summarise, timbre,
-        method = "mean"
-      )
-  ) |>
-  mutate(pitches = map(pitches, compmus_normalise, "clr")) |>
-  mutate_at(vars(pitches, timbre), map, bind_rows) |>
-  unnest(cols = c(pitches, timbre))
+kpop_mill <- get_playlist_audio_features("", "2d9N60Iz8yzdsWLP1crgd2")
+kpop_on <- get_playlist_audio_features("", "1y6ywhJxaBAjAQ6Ybmg0kg")
 ```
 
 ```{r}
@@ -202,127 +56,314 @@ kpop <-
 ```
 
 ```{r}
-kpop_juice <-
-  recipe(
-    track.name ~
-      duration +
-      energy +
-      acousticness +
-      `C#|Db` + G +
-      `G#|Ab` + `A#|Bb` + B +
-      c02 + c03 + c05 +
-      c08 + c12,
-    data = kpop
-  ) |>
-  step_center(all_predictors()) |>
-  step_scale(all_predictors()) |> 
-  # step_range(all_predictors()) |> 
-  prep(kpop |> mutate(track.name = str_trunc(track.name, 20))) |>
-  juice() |>
-  column_to_rownames("track.name")
+ggplot1 <- ggplot(kpop, aes(
+  x = tempo, y = danceability, color = track.popularity, text = track.name)) + 
+  geom_point() +
+  scale_color_continuous(name = "Popularity", trans = "reverse") + 
+  theme_light() +
+  labs(title = "Relationship between Tempo and Danceability: K-pop Millennium vs. K-pop ON!", x = "Tempo", y = "Danceability") + 
+  theme(plot.title = element_text(size = 10)) +
+  facet_grid(. ~ playlist_name, scales = "fixed") 
+
+ggplotly(ggplot1)
+```
+
+### Chart B
+```{r}
+tempo <- ggplot(kpop, aes(
+  x = tempo)) + 
+  geom_histogram(binwidth = 10) +
+  theme_light() +
+  labs(title = "Distribution of Tempo", x = "Tempo") + 
+  theme(plot.title = element_text(size = 11)) + 
+  facet_grid(. ~ playlist_name, scales = "fixed")
 ```
 
 ```{r}
-kpop_dist <- dist(kpop_juice, method = "euclidean")
+danceability <- ggplot(kpop, aes(
+  x = danceability)) + 
+  geom_histogram(binwidth = 0.030) +
+  theme_light() +
+  labs(title = "Distribution of Danceability", x = "Danceability") + 
+  theme(plot.title = element_text(size = 11)) + 
+  facet_grid(. ~ playlist_name, scales = "fixed")
 ```
 
 ```{r}
-kpop_dist |> 
-  hclust(method = "complete") |> # Try single, average, and complete.
-  dendro_data() |>
-  ggdendrogram() + 
-  theme(text = element_text(size = 3)) + 
-  ggtitle("Dendrogram of K-pop ON! and K-pop Millennium")
+grid.arrange(tempo, danceability, ncol=2)
 ```
-
-### Chart C
-```{r}
-kpop_features |>
-  ggplot(aes(x = duration, y = acousticness, colour = playlist, size = energy)) +
-  geom_point(alpha = 0.8) +
-  scale_color_viridis_d() +
-  labs(
-    x = "Duration",
-    y = "Acousticness",
-    size = "Energy",
-    colour = "Playlist",
-    title = "Relationship between Duration and Acousticness: K-pop Millennium vs. K-pop ON"
-  )
-```
-
 
 Column
 --------------------------------------------------------------------------------
 
-### What are the key features that distinguish K-pop songs from different eras?
+### How does the use of pitches differ between 'Standing Next to You (2023)' and 'Tell Me (2007)?'
+In exploring the relationship between danceability and tempo within the playlists "K-pop ON!" and "Millennium K-pop," it is evident that while no strong correlation exists between the two variables, danceability tends to increase with higher tempo. Additionally, the color-coded points on the scatter plot reveal that current K-pop tracks exhibit significantly higher popularity compared to tracks in the Millennium playlist. However, the correlation between track popularity and danceability remains unclear, as no definitive relationship has been established.
 
-In my initial exploration, I used the clustering algorithm to examine its ability to accurately cluster K-pop songs in their corresponding era. However, since each playlist contains 100 tracks, the resulting dendrogram displayed 200 tracks, posing challenges in the interpretation. Consequently, I tried the classification algorithm to identify key features that the algorithm uses to classify the different eras. Through this analysis, I identified duration, G, c12, A#, C05, C02, B, C08, C#, C03, G#, energy, and acousticness as the top 13 features for classification. With this insight, I re-ran the clustering algorithm solely focusing on these features, which resulted in a more refined dendrogram. Despite the inherent complexity of the dendrogram due to the large number of tracks, it became evident that the clustering algorithm performed more effectively when leveraging the key features identified by the classification algorithm. An alternative way to visualize the significance of key features is shown in Chart C, which uses the following features: acousticness, duration, and energy. Notably, it reveals a distinct clustering pattern where tracks from the millennium era are grouped with higher duration, while recent releases tend to have shorter durations. Such depiction offers a clear and insightful perspective on how these features contribute to the differentiation of K-pop songs across different periods.
-
-
-Tempogram
-=================================================================================
+For a more detailed comparison between the two playlists, histograms were created to visualize the distribution of danceability and tempo. While danceability values remain relatively similar between the two playlists, there is a notable shift in tempo. In the Millennium playlist, there is a distinct preference for a specific tempo, whereas contemporary tracks display a more diverse range, resembling a more symmetrical distribution. Despite this difference, both playlists share a similar mode tempo of 120~130 beats per minute (bpm). One reason for this preference is that producers tend to adhere to the mainstream tempo that have previously gained popularity. Moreover, in the contemporary era of globalized music, K-pop producers have increased access to a wider range of musical styles via streaming platforms, enabling them to draw inspiration from different genres, such as Western music. As a result, modern K-pop consists of a broader spectrum of tempos, in contrast to the singular tempo preference observed in the Millennium era.
 
 
-Column {.tabset}
---------------------------------------------------------------------------------
+Chromatogram
+==================================================================================
 
-### Chart A
+Column
+----------------------------------------------------------------------------------
+
+### Comparsion of two chromatograms
 
 ```{r}
-jungkook_tempo <- get_tidy_audio_analysis("2KslE17cAJNHTsI2MI0jb2")
+jungkook <-
+  get_tidy_audio_analysis("2KslE17cAJNHTsI2MI0jb2") |>
+  select(segments) |>
+  unnest(segments) |>
+  select(start, duration, pitches)
 ```
 
 ```{r}
-jungkook_tempo |>
-  tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) |>
-  ggplot(aes(x = time, y = bpm, fill = power)) +
-  geom_raster() +
-  scale_fill_viridis_c(guide = "none") +
-  labs(x = "Time (s)", y = "Tempo (BPM)", title = "Tempogram of 'Standing Next to You (2023)'") +
+jungkook_chrom <- 
+  jungkook |>
+  mutate(pitches = map(pitches, compmus_normalise, "euclidean")) |>
+  compmus_gather_chroma() |> 
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = pitch_class,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(title = "Chromagram of 'Standing Next to You (2023)'", x = "Time (s)", y = NULL, fill = "Magnitude") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12)) + 
+  scale_fill_viridis_c()
+```
+
+```{r}
+wgirls <-
+  get_tidy_audio_analysis("2UuKZDzjZ7cVMOvpmuAMYj") |>
+  select(segments) |>
+  unnest(segments) |>
+  select(start, duration, pitches)
+```
+
+```{r}
+wgirls_chrom <- 
+  wgirls |>
+  mutate(pitches = map(pitches, compmus_normalise, "euclidean")) |>
+  compmus_gather_chroma() |> 
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = pitch_class,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(title = "Chromagram of 'Tell Me (2007)'", x = "Time (s)", y = NULL, fill = "Magnitude") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12)) + 
+  scale_fill_viridis_c()
+```
+
+```{r}
+grid.arrange(jungkook_chrom, wgirls_chrom, ncol=1)
+```
+
+Column
+--------------------------------------------------------------------------------
+
+### How does the use of pitches differ between 'Standing Next to You (2023)' and 'Tell Me (2007)?'
+When examining the chromagrams of two highly popular tracks from different playlists, the differences between the two become evident. "Standing Next to You" by Jungkook prominently features the pitch classes C#/Db, D, and A, while "Tell Me" by Wonder Girls includes C#/Db, F#/Gb, and B as its dominant pitch classes. Notably, "Standing Next to You" displays a more colorful chromagram, suggesting a diverse range of pitches and a potentially more complex harmonic structure. Furthermore, the track appears to have a clearer musical structure, with recurring patterns emphasizing its melodic motifs. Yet, it is important to acknolwedge that these insights are specific to the tracks "Standing Next to You" and "Tell Me" and should not be generalized to comparisons between music from different eras, such as the millennium and the present.
+
+Self-Similarity Matrix (SSM)
+=================================================================================
+
+Column
+---------------------------------------------------------------------------------
+
+### Comparative chromagram analysis
+
+```{r}
+cupid <-
+  get_tidy_audio_analysis("5mg3VB3Qh7jcR5kAAC4DSV") |>
+  select(segments) |>
+  unnest(segments) |>
+  select(start, duration, pitches)
+
+cupid_sabrina <-
+  get_tidy_audio_analysis("28PCjIXE4NJWDIqpRsD3rl") |>
+  select(segments) |>
+  unnest(segments) |>
+  select(start, duration, pitches)
+```
+
+```{r}
+compmus_long_distance(
+  cupid |> mutate(pitches = map(pitches, compmus_normalise, "euclidean")),
+  cupid_sabrina |> mutate(pitches = map(pitches, compmus_normalise, "euclidean")),
+  feature = pitches,
+  method = "cosine"
+) |>
+  ggplot(
+    aes(
+      x = xstart + xduration / 2,
+      width = xduration,
+      y = ystart + yduration / 2,
+      height = yduration,
+      fill = d
+    )
+  ) +
+  geom_tile() +
+  coord_equal() +
+  labs(x = "Cupid - FIFTY FIFTY", y = "Cupid - FIFTY FIFTY, Sabrina Carpenter", title = "Comparative Chromagram Analysis: Two Versions of 'Cupid'") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, hjust = 0.5)) +
+  scale_fill_viridis_c(guide = NULL)
+```
+
+Column
+---------------------------------------------------------------------------------
+
+### Does 'Cupid' by FIFTY FIFTY differ from 'Cupid' by FIFTY FIFTY featuring Sabrina Carpenter?
+For a more in-depth analysis, I compared the chroma vectors of two different versions of the same track. On the x-axis is the original version of "Cupid" by FIFTY FIFTY, while the remixed version featuring Sabrina Carpenter is represented on the y-axis. After applying various combinations of normalization and distance methods, the final visualization uses the Euclidean normalization paired with the cosine distance method. Despite the presence of a diagonal line on the graph, it lacks the intensity to indicate a strong correlation between the two versions. Additionally, the bright cross patterns emerge, particularly after 50 seconds when Sabrina Carpenter's vocals are introduced. However, the checkerboard pattern suggests that the two versions share a similar structure: intro, verse, chorus, verse, chorus, bridge, and chorus. 
+
+
+Cepstrogram
+=================================================================================
+
+Column {.tabset}
+----------------------------------------------------------------------------------
+
+### Chart A
+```{r}
+jungkook_timbre <-
+  get_tidy_audio_analysis("2KslE17cAJNHTsI2MI0jb2") |> # Change URI.
+  compmus_align(bars, segments) |>                     # Change `bars`
+  select(bars) |>                                      #   in all three
+  unnest(bars) |>                                      #   of these lines.
+  mutate(
+    pitches =
+      map(segments,
+        compmus_summarise, pitches,
+        method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  ) |>
+  mutate(
+    timbre =
+      map(segments,
+        compmus_summarise, timbre,
+        method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  )
+```
+
+```{r}
+jungkook_timbre |>
+  compmus_gather_timbre() |>
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = basis,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(x = "Time (s)", y = NULL, fill = "Magnitude", title = "Cepstrogram of 'Standing Next to You (2023)'") +
+  scale_fill_viridis_c() +                              
   theme_classic()
 ```
 
 ### Chart B
-
 ```{r}
-wgirls_tempo <- get_tidy_audio_analysis("2UuKZDzjZ7cVMOvpmuAMYj")
+wgirls_timbre <-
+  get_tidy_audio_analysis("2UuKZDzjZ7cVMOvpmuAMYj") |> # Change URI.
+  compmus_align(bars, segments) |>                     # Change `bars`
+  select(bars) |>                                      #   in all three
+  unnest(bars) |>                                      #   of these lines.
+  mutate(
+    pitches =
+      map(segments,
+        compmus_summarise, pitches,
+        method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  ) |>
+  mutate(
+    timbre =
+      map(segments,
+        compmus_summarise, timbre,
+        method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  )
 ```
 
 ```{r}
-wgirls_tempo |>
-  tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) |>
-  ggplot(aes(x = time, y = bpm, fill = power)) +
-  geom_raster() +
-  scale_fill_viridis_c(guide = "none") +
-  labs(x = "Time (s)", y = "Tempo (BPM)", title = "Tempogram of 'Tell Me (2007)'") +
+wgirls_timbre |>
+  compmus_gather_timbre() |>
+  ggplot(
+    aes(
+      x = start + duration / 2,
+      width = duration,
+      y = basis,
+      fill = value
+    )
+  ) +
+  geom_tile() +
+  labs(x = "Time (s)", y = NULL, fill = "Magnitude", title = "Cepstrogram of 'Tell Me (2007)'") +
+  scale_fill_viridis_c() +                              
   theme_classic()
 ```
 
 ### Chart C
-
 ```{r}
-jungkook_remix_tempo <- get_tidy_audio_analysis("0VPFT123HKoQ2J6ipeDcI1")
+kpop_on <-
+  get_playlist_audio_features(
+    "",
+    "1y6ywhJxaBAjAQ6Ybmg0kg"
+  ) |>
+  slice(1:30) |>
+  add_audio_analysis()
+kpop_mill <-
+  get_playlist_audio_features(
+    "",
+    "2d9N60Iz8yzdsWLP1crgd2"
+  ) |>
+  slice(1:30) |>
+  add_audio_analysis()
+kpop <-
+  kpop_on |>
+  mutate(genre = "ON!") |>
+  bind_rows(kpop_mill |> mutate(genre = "Millennium"))
 ```
 
 ```{r}
-jungkook_remix_tempo |>
-  tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) |>
-  ggplot(aes(x = time, y = bpm, fill = power)) +
-  geom_raster() +
-  scale_fill_viridis_c(guide = "none") +
-  labs(x = "Time (s)", y = "Tempo (BPM)", title = "Tempogram of 'Standing Next to You Remix (2023)'") +
-  theme_classic()
+kpop |>
+  mutate(
+    timbre =
+      map(
+        segments,
+        compmus_summarise,
+        timbre,
+        method = "mean"
+      )
+  ) |>
+  select(genre, timbre) |>
+  compmus_gather_timbre() |>
+  ggplot(aes(x = basis, y = value, fill = genre)) +
+  geom_violin() +
+  scale_fill_viridis_d() +
+  labs(x = "Spotify Timbre Coefficients", y = "", fill = "Genre")
 ```
 
+Column
+----------------------------------------------------------------------------------
 
-Column 
---------------------------------------------------------------------------------
+### Has the use of instrumentation developed since the millennium in K-pop?
+When examining the cepstrograms of "Standing Next to You" and "Tell Me," it is evident that "Standing Next to You" displays a more diverse magnitude spectrum, indicating a wide range of instrumentation used. On the other hand, "Tell Me" maintains a consistent color frame throughout, suggesting a relatively uniform timbre. Additionally, chart C shows significant differences in the second coefficient between the two playlists. However, since Spotify's documentation does not specify the related features for each coefficient, it is challenging to identify what the second coefficient represents. 
 
-### Does the tempo of K-pop tracks match the diverse range of genres it references?
+Although there are several potential reasons for these observations, one could be that the advancements in musical technology over the years have enabled producers to incorporate a wider variety of sounds into their compositions. Such technological progress contributes to the diverse magnitude seen in "Standing Next to You." Moreover, the consistent timbre in "Tell Me" may be attributed to the track's relatively simple and repeating musical structure, lacking significant deviations from its main melodic line.
 
-The tempo variation in 'Standing Next to You (Chart A)' exhibits greater diversity, with fluctuations between 105 bpm, 135 bpm, and 145 bpm. [Other sources](https://songbpm.com/@jung-kook/standing-next-to-you-X_F-hVBltl) confirm that the track's tempo is 106 bpm, aligning with Spotify's data. Such tempo variation reflects the dynamic nature of the jazz-funk genre, typically ranging between [90-110 bpm.](https://splice.com/blog/genre-focus-series-funk-with-splice-sounds/#:~:text=Tempo%20%26%20Meter%3A%20Most%20funk%20songs,dirty%20on%20the%20dance%20floor.) Conversely, 'Tell Me (Chart B)' maintains a consistent tempo of 125 bpm throughout, as confirmed by [additional source](https://songbpm.com/@wonder-girls/tell-me) indicating 127bpm. This tempo corresponds to the steady pace characteristic of disco, which typically centers around [120 bpm.](esounds.html#:~:text=The%20basic%20tempo%20of%20disco,the%20gaps%20between%20the%20beats.)
-
-While there aren't significant differences in tempo between 'Standing Next to You' and the its remixed version featuring USHER (Chart C), fluctuations occur notably around 110 and 150 seconds, coinciding with the initiation of USHER's vocal. His segment, characterized by a softer, laid-back vibe, temporarily reduces the tempo to approximately 90 bpm before and after the 150-second mark. Apart from these minor fluctuations, the main tempo remains consistent around 105 bpm, as indicated by a strong, straight line.
 
 Chordogram 
 =================================================================================
@@ -524,131 +565,245 @@ Column
 --------------------------------------------------------------------------------
 
 ### What accounts for the prevalent use of seventh chords in K-pop songs?
-Continuing the comparative analysis of 'Standing Next to You' and 'Tell Me,' I have visualized the chordograms for both tracks. In contrast to the chromagram or cepstrogram, these chordograms reveal a notable similarity in the primary chords, with seventh chords being prominently featured. For instance, 'Standing Next to You (Chart A)' incorporates chords like B:7, E:7, A:7, and D:7, mirroring the seventh chords found in 'Tell Me (Chart B),' such as B:7, D:7, Ab:7, and Gb:7.
+Continuing the comparative analysis of 'Standing Next to You' and 'Tell Me,' I have visualized the chordograms for both tracks. In contrast to the chromagram or cepstrogram, these chordograms reveal a high similarity in the primary chords, with seventh chords being prominently featured. For instance, 'Standing Next to You (Chart A)' incorporates chords like B:7, E:7, A:7, and D:7, mirroring the seventh chords found in 'Tell Me (Chart B),' such as B:7, D:7, Ab:7, and Gb:7.
 
-Seventh chords, commonly found in modern music, especially jazz, play a noticeable role in both tracks. The prevalence of seventh chords in 'Standing Next to You' aligns with its jazz-funk and disco-pop influences. Similarly, 'Tell Me,' categorized as disco, extensively employs seventh chords, underscoring their significance in the genre.
+Seventh chords, commonly found in modern music, especially jazz, play a noticeable role in both tracks. The prevalence of seventh chords in 'Standing Next to You' aligns with its jazz-funk and disco-pop influences. Similarly, 'Tell Me,' categorized as disco, extensively employs seventh chords, emphasizing their significance in the genre.
 
-To delve deeper into the relationship between seventh chords and K-pop, I examined a recent release, 'Easy (Chart C),' by LE SSERAFIM, identified as R&B trap. Surprisingly, the dominance of seventh chords persists, evident in darker lines at A:7, D:7, C:7, and F:7. This suggests a broader trend where seventh chords are commonly utilized in K-pop.
+To delve deeper into the relationship between seventh chords and K-pop, I examined another recent release, 'Easy (Chart C),' by LE SSERAFIM, identified as R&B trap. Surprisingly, the dominance of seventh chords continues, evident in the darker lines at A:7, D:7, C:7, and F:7. Hence, this suggests a broader trend where seventh chords are commonly utilized in K-pop.
 
 
-Cepstrogram
+Tempogram
 =================================================================================
 
+
 Column {.tabset}
-----------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 ### Chart A
 ```{r}
-jungkook_timbre <-
-  get_tidy_audio_analysis("2KslE17cAJNHTsI2MI0jb2") |> # Change URI.
-  compmus_align(bars, segments) |>                     # Change `bars`
-  select(bars) |>                                      #   in all three
-  unnest(bars) |>                                      #   of these lines.
-  mutate(
-    pitches =
-      map(segments,
-        compmus_summarise, pitches,
-        method = "rms", norm = "euclidean"              # Change summary & norm.
-      )
-  ) |>
-  mutate(
-    timbre =
-      map(segments,
-        compmus_summarise, timbre,
-        method = "rms", norm = "euclidean"              # Change summary & norm.
-      )
-  )
+jungkook_tempo <- get_tidy_audio_analysis("2KslE17cAJNHTsI2MI0jb2")
 ```
 
 ```{r}
-jungkook_timbre |>
-  compmus_gather_timbre() |>
-  ggplot(
-    aes(
-      x = start + duration / 2,
-      width = duration,
-      y = basis,
-      fill = value
-    )
-  ) +
-  geom_tile() +
-  labs(x = "Time (s)", y = NULL, fill = "Magnitude", title = "Cepstrogram of 'Standing Next to You (2023)'") +
-  scale_fill_viridis_c() +                              
+jungkook_tempo |>
+  tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) |>
+  ggplot(aes(x = time, y = bpm, fill = power)) +
+  geom_raster() +
+  scale_fill_viridis_c(guide = "none") +
+  labs(x = "Time (s)", y = "Tempo (BPM)", title = "Tempogram of 'Standing Next to You (2023)'") +
   theme_classic()
 ```
 
 ### Chart B
 ```{r}
-wgirls_timbre <-
-  get_tidy_audio_analysis("2UuKZDzjZ7cVMOvpmuAMYj") |> # Change URI.
-  compmus_align(bars, segments) |>                     # Change `bars`
-  select(bars) |>                                      #   in all three
-  unnest(bars) |>                                      #   of these lines.
-  mutate(
-    pitches =
-      map(segments,
-        compmus_summarise, pitches,
-        method = "rms", norm = "euclidean"              # Change summary & norm.
-      )
-  ) |>
-  mutate(
-    timbre =
-      map(segments,
-        compmus_summarise, timbre,
-        method = "rms", norm = "euclidean"              # Change summary & norm.
-      )
-  )
+wgirls_tempo <- get_tidy_audio_analysis("2UuKZDzjZ7cVMOvpmuAMYj")
 ```
 
 ```{r}
-wgirls_timbre |>
-  compmus_gather_timbre() |>
-  ggplot(
-    aes(
-      x = start + duration / 2,
-      width = duration,
-      y = basis,
-      fill = value
-    )
-  ) +
-  geom_tile() +
-  labs(x = "Time (s)", y = NULL, fill = "Magnitude", title = "Cepstrogram of 'Tell Me (2007)'") +
-  scale_fill_viridis_c() +                              
+wgirls_tempo |>
+  tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) |>
+  ggplot(aes(x = time, y = bpm, fill = power)) +
+  geom_raster() +
+  scale_fill_viridis_c(guide = "none") +
+  labs(x = "Time (s)", y = "Tempo (BPM)", title = "Tempogram of 'Tell Me (2007)'") +
+  theme_classic()
+```
+
+### Chart C
+```{r}
+jungkook_remix_tempo <- get_tidy_audio_analysis("0VPFT123HKoQ2J6ipeDcI1")
+```
+
+```{r}
+jungkook_remix_tempo |>
+  tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) |>
+  ggplot(aes(x = time, y = bpm, fill = power)) +
+  geom_raster() +
+  scale_fill_viridis_c(guide = "none") +
+  labs(x = "Time (s)", y = "Tempo (BPM)", title = "Tempogram of 'Standing Next to You Remix (2023)'") +
   theme_classic()
 ```
 
 
-Column
-----------------------------------------------------------------------------------
+Column 
+--------------------------------------------------------------------------------
 
-### Has the use of instrumentation developed since the millennium in K-pop?
-In this comparison, I analyze the cepstrograms of two tracks from the playlists "K-pop ON!" and K-pop Millennium." Upon examining the visualizations, a notable distinction emerges between "Standing Next to You" and "Tell Me." The cepstrogram of "Standing Next to You" reveals a diverse magnitude spectrum, indicating in a broad range of instrumentation in use. On the other hand, "Tell Me" exhibits a consistent color frame throughout the song, indicative of a relatively uniform timbre.
+### Does the tempo of K-pop tracks match the diverse range of genres it references?
+In 'Standing Next to You (Chart A),' there are more tempo variations, with fluctuations between 105 bpm, 135 bpm, and 145 bpm. [Other sources](https://songbpm.com/@jung-kook/standing-next-to-you-X_F-hVBltl) confirm that the track's tempo is 106 bpm, aligning with Spotify's data. Such tempo variation reflects the dynamic nature of the jazz-funk genre, typically ranging between [90-110 bpm.](https://splice.com/blog/genre-focus-series-funk-with-splice-sounds/#:~:text=Tempo%20%26%20Meter%3A%20Most%20funk%20songs,dirty%20on%20the%20dance%20floor.) Conversely, 'Tell Me (Chart B)' maintains a consistent tempo of 125 bpm throughout, as confirmed by [additional sources](https://songbpm.com/@wonder-girls/tell-me) indicating 127 bpm. This tempo corresponds to the steady pace characteristic of disco, which typically centers around [120 bpm.](esounds.html#:~:text=The%20basic%20tempo%20of%20disco,the%20gaps%20between%20the%20beats.)
 
-Although there are several potential reasons for these observations, one could be that the advancements in musical technology over the years have enabled producers to incorporate a wider variety of sounds into their compositions. Such technological progress contributes to the diverse magnitude seen in "Standing Next to You." Moreover, the consistent timbre in "Tell Me" may be attributed to the track's relatively simple and repeating musical structure, lacking significant deviations from its main melodic line.
+While there aren't significant differences in tempo between 'Standing Next to You' and the its remixed version featuring USHER, as shown in Chart C, fluctuations occur notably around 110 and 150 seconds. When listening to the track, it becomes evident that these fluctuations coincide with the introduction of USHER's vocals. His segment, characterized by a softer, laid-back vibe, temporarily reduces the tempo to approximately 90 bpm before and after the 150-second mark. Apart from these minor fluctuations, the main tempo remains consistent around 105 bpm, as indicated by a strong, straight line.
 
-Corpus
-==================================================================================
 
-Column
----------------------------------------------------------------------------------
-
-### Explanation of corpus
-As an international student from South Korea, my passion for K-pop extends beyond the contemporary music of my time to include that of the preceding millennium. Over the years, I have observed the transformative changes in K-pop, influenced by advancements in production techniques and the forces of globalization. Notably, the growing collaborations between K-pop and Western artists have resulted in a fusion of diverse musical genres. In particular, I anticipate “Millennium K-pop” and “K-pop ON!” playlists to reveal distinct differences in musical components, including the tempo and rhythm, instrumentation trends, and melodic content. Upon reviewing the Spotify-curated playlists, I can conclude that both collections feature tracks that defined their respective eras. It is also important to acknowledge that both playlists maintain consistency by exclusively featuring music from K-pop groups without incorporating other genres like K-hip-hop or K-indie. However, a notable difference lies in the playlist sizes; the “Millennium K-pop” playlist consists of 100 tracks, while “K-pop ON!” features 50 tracks. For the analysis to have a more balanced comparison, it would be beneficial to augment the tracks from the millennium. In conclusion, my objective is to enhance my understanding of how K-pop has evolved by comparing the two playlists on Spotify, each representing different temporal frames - the millennium and the present.
-
-Column
----------------------------------------------------------------------------------
-<iframe src="https://open.spotify.com/embed/playlist/37i9dQZF1DWUoY6Ih7vsxr?utm_source=generator" width="100%" height="380" frameBorder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
-
-Exploration
-==================================================================================
+Classification and Clustering
+=================================================================================
 
 Column {.tabset}
----------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 ### Chart A
 ```{r}
-kpop_mill <- get_playlist_audio_features("", "2d9N60Iz8yzdsWLP1crgd2")
-kpop_on <- get_playlist_audio_features("", "1y6ywhJxaBAjAQ6Ybmg0kg")
+kpop_on <- get_playlist_audio_features("spotify", "1y6ywhJxaBAjAQ6Ybmg0kg")
+kpop_mill <- get_playlist_audio_features("spotify", "2d9N60Iz8yzdsWLP1crgd2")
+kpop <-
+  bind_rows(
+    kpop_on |> mutate(playlist = "ON!") |> slice_head(n = 20),
+    kpop_mill |> mutate(playlist = "Millennium") |> slice_head(n = 20),
+  ) |> 
+  add_audio_analysis()
+```
+
+```{r}
+kpop_features <-
+  kpop |>  # For your portfolio, change this to the name of your corpus.
+  mutate(
+    playlist = factor(playlist),
+    segments = map2(segments, key, compmus_c_transpose),
+    pitches =
+      map(
+        segments,
+        compmus_summarise, pitches,
+        method = "mean", norm = "manhattan"
+      ),
+    timbre =
+      map(
+        segments,
+        compmus_summarise, timbre,
+        method = "mean",
+      )
+  ) |>
+  mutate(pitches = map(pitches, compmus_normalise, "clr")) |>
+  mutate_at(vars(pitches, timbre), map, bind_rows) |>
+  unnest(cols = c(pitches, timbre))
+```
+
+```{r}
+kpop_recipe <-
+  recipe(
+    playlist ~
+      danceability +
+      energy +
+      loudness +
+      speechiness +
+      acousticness +
+      instrumentalness +
+      liveness +
+      valence +
+      tempo +
+      duration +
+      C + `C#|Db` + D + `D#|Eb` +
+      E + `F` + `F#|Gb` + G +
+      `G#|Ab` + A + `A#|Bb` + B +
+      c01 + c02 + c03 + c04 + c05 + c06 +
+      c07 + c08 + c09 + c10 + c11 + c12,
+    data = kpop_features      # Use the same name as the previous block.
+  ) |>
+  step_center(all_predictors()) |>
+  step_scale(all_predictors())      # Converts to z-scores.
+  # step_range(all_predictors())    # Sets range to [0, 1].
+```
+
+```{r}
+kpop_cv <- kpop_features |> vfold_cv(5)
+```
+
+```{r}
+forest_model <-
+  rand_forest() |>
+  set_mode("classification") |> 
+  set_engine("ranger", importance = "impurity")
+kpop_forest <- 
+  workflow() |> 
+  add_recipe(kpop_recipe) |> 
+  add_model(forest_model) |> 
+  fit_resamples(
+    kpop_cv, 
+    control = control_resamples(save_pred = TRUE)
+  )
+```
+
+```{r}
+get_conf_mat <- function(fit) {
+  outcome <- .get_tune_outcome_names(fit)
+  fit |> 
+    collect_predictions() |> 
+    conf_mat(truth = outcome, estimate = .pred_class)
+}  
+
+get_pr <- function(fit) {
+  fit |> 
+    conf_mat_resampled() |> 
+    group_by(Prediction) |> mutate(precision = Freq / sum(Freq)) |> 
+    group_by(Truth) |> mutate(recall = Freq / sum(Freq)) |> 
+    ungroup() |> filter(Prediction == Truth) |> 
+    select(class = Prediction, precision, recall)
+}  
+```
+
+```{r, results='hide'}
+kpop_forest |> get_pr()
+```
+
+```{r}
+workflow() |> 
+  add_recipe(kpop_recipe) |> 
+  add_model(forest_model) |> 
+  fit(kpop_features) |> 
+  pluck("fit", "fit", "fit") |>
+  ranger::importance() |> 
+  enframe() |> 
+  mutate(name = fct_reorder(name, value)) |> 
+  ggplot(aes(name, value)) + 
+  geom_col() + 
+  coord_flip() +
+  theme_minimal() +
+  labs(x = NULL, y = "Importance", title = "Feature Importance of Random Forest")
+```
+
+### Chart B
+```{r}
+kpop_mill <-
+  get_playlist_audio_features("", "2d9N60Iz8yzdsWLP1crgd2") |>
+  add_audio_analysis() |>
+  mutate(
+    segments = map2(segments, key, compmus_c_transpose),
+    pitches =
+      map(segments,
+        compmus_summarise, pitches,
+        method = "mean", norm = "manhattan"
+      ),
+    timbre =
+      map(
+        segments,
+        compmus_summarise, timbre,
+        method = "mean"
+      )
+  ) |>
+  mutate(pitches = map(pitches, compmus_normalise, "clr")) |>
+  mutate_at(vars(pitches, timbre), map, bind_rows) |>
+  unnest(cols = c(pitches, timbre))
+```
+
+```{r}
+kpop_on <-
+  get_playlist_audio_features("", "1y6ywhJxaBAjAQ6Ybmg0kg") |>
+  add_audio_analysis() |>
+  mutate(
+    segments = map2(segments, key, compmus_c_transpose),
+    pitches =
+      map(segments,
+        compmus_summarise, pitches,
+        method = "mean", norm = "manhattan"
+      ),
+    timbre =
+      map(
+        segments,
+        compmus_summarise, timbre,
+        method = "mean"
+      )
+  ) |>
+  mutate(pitches = map(pitches, compmus_normalise, "clr")) |>
+  mutate_at(vars(pitches, timbre), map, bind_rows) |>
+  unnest(cols = c(pitches, timbre))
 ```
 
 ```{r}
@@ -659,180 +814,71 @@ kpop <-
   )
 ```
 
-```{r}
-ggplot1 <- ggplot(kpop, aes(
-  x = tempo, y = danceability, color = track.popularity, text = track.name)) + 
-  geom_point() +
-  scale_color_continuous(name = "Popularity", trans = "reverse") + 
-  theme_light() +
-  labs(title = "Relationship between Tempo and Danceability: K-pop Millennium vs. K-pop ON!", x = "Tempo", y = "Danceability") + 
-  theme(plot.title = element_text(size = 10)) +
-  facet_grid(. ~ playlist_name, scales = "fixed") 
-
-ggplotly(ggplot1)
-```
-
-### Chart B
-```{r}
-tempo <- ggplot(kpop, aes(
-  x = tempo)) + 
-  geom_histogram(binwidth = 10) +
-  theme_light() +
-  labs(title = "Distribution of Tempo", x = "Tempo") + 
-  theme(plot.title = element_text(size = 11)) + 
-  facet_grid(. ~ playlist_name, scales = "fixed")
+```{r, results='hide'}
+kpop_juice <-
+  recipe(
+    track.name ~
+      duration +
+      energy +
+      acousticness +
+      `C#|Db` + G +
+      `G#|Ab` + `A#|Bb` + B +
+      c02 + c03 + c05 +
+      c08 + c12,
+    data = kpop
+  ) |>
+  step_center(all_predictors()) |>
+  step_scale(all_predictors()) |> 
+  # step_range(all_predictors()) |> 
+  prep(kpop |> mutate(track.name = str_trunc(track.name, 20))) |>
+  juice() |>
+  column_to_rownames("track.name")
 ```
 
 ```{r}
-danceability <- ggplot(kpop, aes(
-  x = danceability)) + 
-  geom_histogram(binwidth = 0.030) +
-  theme_light() +
-  labs(title = "Distribution of Danceability", x = "Danceability") + 
-  theme(plot.title = element_text(size = 11)) + 
-  facet_grid(. ~ playlist_name, scales = "fixed")
+kpop_dist <- dist(kpop_juice, method = "euclidean")
 ```
 
 ```{r}
-grid.arrange(tempo, danceability, ncol=2)
+kpop_dist |> 
+  hclust(method = "complete") |> # Try single, average, and complete.
+  dendro_data() |>
+  ggdendrogram() + 
+  theme(text = element_text(size = 3)) + 
+  ggtitle("Dendrogram of K-pop ON! and K-pop Millennium")
 ```
+
+### Chart C
+```{r}
+kpop_features |>
+  ggplot(aes(x = duration, y = acousticness, colour = playlist, size = energy)) +
+  geom_point(alpha = 0.8) +
+  scale_color_viridis_d() +
+  labs(
+    x = "Duration",
+    y = "Acousticness",
+    size = "Energy",
+    colour = "Playlist",
+    title = "Relationship between Duration and Acousticness: K-pop Millennium vs. K-pop ON"
+  )
+```
+
 
 Column
 --------------------------------------------------------------------------------
 
-### How does the use of pitches differ between 'Standing Next to You (2023)' and 'Tell Me (2007)?'
-In exploring the relationship between danceability and tempo within the playlists "K-pop ON!" and "Millennium K-pop," it is evident that while no strong correlation exists between the two variables, danceability tends to increase with higher tempo. Additionally, the color-coded points on the scatter plot reveal that current K-pop tracks exhibit significantly higher popularity compared to tracks in the Millennium playlist. However, the correlation between track popularity and danceability remains unclear, as no definitive relationship has been established.
+### What are the key features that distinguish K-pop songs from different eras?
+In my initial exploration, I used the clustering algorithm to examine its ability to accurately cluster K-pop songs in their corresponding era. However, since each playlist contains 100 tracks, the resulting dendrogram displayed 200 tracks, posing challenges in the interpretation. Consequently, I tried the classification algorithm to identify key features that the algorithm uses to classify the different eras. Through this analysis, I identified duration, G, c12, A#, C05, C02, B, C08, C#, C03, G#, energy, and acousticness as the top 13 features for classification (Chart A).
 
-For a more detailed comparison between the two playlists, histograms were created to visualize the distribution of danceability and tempo. While danceability values remain relatively similar between the two playlists, there is a notable shift in tempo. In the Millennium playlist, there is a distinct preference for a specific tempo, whereas contemporary tracks display a more diverse range, resembling a more symmetrical distribution.
+With this insight, I re-ran the clustering algorithm solely focusing on these features, which resulted in a more refined dendrogram. Despite the inherent complexity of the dendrogram due to the large number of tracks, it became evident that the clustering algorithm performed more effectively when leveraging the key features identified by the classification algorithm (Chart B). 
+
+An alternative way to visualize the significance of key features is shown in Chart C, which uses the following features: acousticness, duration, and energy. Notably, it reveals a distinct clustering pattern where tracks from the millennium era are grouped with higher duration, while recent releases tend to have shorter durations. Such depiction offers a clear and insightful perspective on how these features contribute to the differentiation of K-pop songs across different periods.
 
 
-Chromatogram
-==================================================================================
-
-Column
-----------------------------------------------------------------------------------
-
-### Comparsion of two chromatograms
-
-```{r}
-jungkook <-
-  get_tidy_audio_analysis("2KslE17cAJNHTsI2MI0jb2") |>
-  select(segments) |>
-  unnest(segments) |>
-  select(start, duration, pitches)
-```
-
-```{r}
-jungkook_chrom <- 
-  jungkook |>
-  mutate(pitches = map(pitches, compmus_normalise, "euclidean")) |>
-  compmus_gather_chroma() |> 
-  ggplot(
-    aes(
-      x = start + duration / 2,
-      width = duration,
-      y = pitch_class,
-      fill = value
-    )
-  ) +
-  geom_tile() +
-  labs(title = "Chromagram of 'Standing Next to You (2023)'", x = "Time (s)", y = NULL, fill = "Magnitude") +
-  theme_minimal() +
-  theme(plot.title = element_text(size = 12)) + 
-  scale_fill_viridis_c()
-```
-
-```{r}
-wgirls <-
-  get_tidy_audio_analysis("2UuKZDzjZ7cVMOvpmuAMYj") |>
-  select(segments) |>
-  unnest(segments) |>
-  select(start, duration, pitches)
-```
-
-```{r}
-wgirls_chrom <- 
-  wgirls |>
-  mutate(pitches = map(pitches, compmus_normalise, "euclidean")) |>
-  compmus_gather_chroma() |> 
-  ggplot(
-    aes(
-      x = start + duration / 2,
-      width = duration,
-      y = pitch_class,
-      fill = value
-    )
-  ) +
-  geom_tile() +
-  labs(title = "Chromagram of 'Tell Me (2007)'", x = "Time (s)", y = NULL, fill = "Magnitude") +
-  theme_minimal() +
-  theme(plot.title = element_text(size = 12)) + 
-  scale_fill_viridis_c()
-```
-
-```{r}
-grid.arrange(jungkook_chrom, wgirls_chrom, ncol=1)
-```
-
-Column
---------------------------------------------------------------------------------
-
-### How does the use of pitches differ between 'Standing Next to You (2023)' and 'Tell Me (2007)?'
-I have extracted the chromagrams of two highly popular tracks from different playlists. The first chromagram represents "Standing Next to You" by Jungkook, featuring dominant notes C#/Db, D, and A. In contrast, the second chromagram depicts "Tell Me" by Wonder Girls, showing dominant notes C#/Db, F#/Gb, and B. A notable distinction emerges when comparing the two: "Standing Next to You" displays a more colorful chromagram, suggesting a diverse range of pitches and a potentially more complex harmonic structure. Furthermore, it appears that "Standing Next to You" has a clearer musical structure, with recurring patterns emphasizing its melodic motifs. It is important to note that these insights are specific to the tracks "Standing Next to You" and "Tell Me" and should not be generalized to comparisons between music from different eras, such as the millennium and the present.
-
-Self-Similarity Matrix (SSM)
+Conclusion
 =================================================================================
 
-Column
----------------------------------------------------------------------------------
+Through the analysis of the two playlists, "Millennium K-pop" and "K-pop ON!," I gained insights into the evolution of K-pop. In this portfolio, I explored different musical components through visualizations, such as chromagrams, cepstrograms, chordograms, tempograms, and dendrograms. While these visualizations provided interesting insights, one significant finding was the difference in duration between the two playlists. Notably, tracks released in the Millennium tended to have a longer duration compared to contemporary tracks. Moreover, differences in cepstrograms and tempograms between the playlists hinted at external influences stemming from the globalized music era. Contemporary K-pop tracks exhibited a broader range of tempos and timbre, potentially influenced by producers' access to varied musical genres via streaming platforms. However, similarities were also observed in both playlists, which was the prevalent use of seventh chords in K-pop tracks. 
 
-### Comparative chromagram analysis
-
-```{r}
-cupid <-
-  get_tidy_audio_analysis("5mg3VB3Qh7jcR5kAAC4DSV") |>
-  select(segments) |>
-  unnest(segments) |>
-  select(start, duration, pitches)
-
-cupid_sabrina <-
-  get_tidy_audio_analysis("28PCjIXE4NJWDIqpRsD3rl") |>
-  select(segments) |>
-  unnest(segments) |>
-  select(start, duration, pitches)
-```
-
-```{r}
-compmus_long_distance(
-  cupid |> mutate(pitches = map(pitches, compmus_normalise, "euclidean")),
-  cupid_sabrina |> mutate(pitches = map(pitches, compmus_normalise, "euclidean")),
-  feature = pitches,
-  method = "cosine"
-) |>
-  ggplot(
-    aes(
-      x = xstart + xduration / 2,
-      width = xduration,
-      y = ystart + yduration / 2,
-      height = yduration,
-      fill = d
-    )
-  ) +
-  geom_tile() +
-  coord_equal() +
-  labs(x = "Cupid - FIFTY FIFTY", y = "Cupid - FIFTY FIFTY, Sabrina Carpenter", title = "Comparative Chromagram Analysis: Two Versions of 'Cupid'") +
-  theme_minimal() +
-  theme(plot.title = element_text(size = 12, hjust = 0.5)) +
-  scale_fill_viridis_c(guide = NULL)
-```
-
-Column
----------------------------------------------------------------------------------
-
-### Does 'Cupid' by FIFTY FIFTY differ from 'Cupid' by FIFTY FIFTY featuring Sabrina Carpenter?
-For a more in-depth analysis, I compare the chroma vectors of two different versions of the same track. On the x-axis, we have the original song, "Cupid" by FIFTY FIFTY, and on the y-axis, the remixed version featuring Sabrina Carpenter. After experimenting with various combinations of normalization and distance method, the chosen configuration involves the Euclidean normalization method paired with the cosine distance method for the final visualization. Despite the presence of a diagonal line on the graph, it lacks the intensity to indicate a strong correlation between the two versions. Additionally, the checkerboard pattern suggests potential differences between the two tracks. For instance, the remix may introduce additional chords or variations on existing chords, resulting in discrepancies in note magnitude.
-
-
-
-
+Although these findings demonstrate high construct validity due to accurate measurement of musical components, they lack both external and internal validity. Since the analysis relies on only 2-3 visualizations per musical component, it lacks robust evidence. Conversely, analyses encompassing all tracks from both playlists have higher internal validity, as I ensured each playlist included 100 tracks with a popularity score above 40 for balanced and representative comparison. For instance, the finding regarding track duration has higher internal validity compared to the observation of contemporary tracks exhibiting a more diverse range of timbre than Millennium-era tracks. Furthermore, it is challenging to claim that these findings can be generalized to other K-pop tracks. While the tracks chosen for analysis all use seventh chords, it is important to acknowledge that this prevalence may not extend to other K-pop tracks. Ultimately, the comparison between the two playlists deepened my understanding of how tracks released now and in the Millennium demonstrate differences or similarities across various musical components.
 
