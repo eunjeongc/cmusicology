@@ -4,6 +4,8 @@ author: Sally Choi
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
+    self_contained: false
+    source: https://github.com/eunjeongc/cmusicology/blob/main/index.html
 ---
 
 ```{r setup, include=FALSE}
@@ -28,11 +30,21 @@ Column
 ---------------------------------------------------------------------------------
 
 ### Explanation of corpus
-As an international student from South Korea, my passion for K-pop extends beyond the contemporary music of my time to include that of the preceding millennium. Over the years, I have observed transformative changes in K-pop, influenced by advancements in production techniques and the forces of globalization. Notably, the growing collaborations between K-pop and Western artists have resulted in a fusion of diverse musical genres. In particular, I anticipate “Millennium K-pop” and “K-pop ON!” playlists to reveal distinct differences in musical components, including the tempo and rhythm, instrumentation trends, and melodic content. Upon reviewing the Spotify-curated playlists, I can conclude that both collections feature tracks that defined their respective eras. It is also important to acknowledge that both playlists maintain consistency by exclusively featuring music from K-pop groups without incorporating other genres like K-hip-hop or K-indie. However, a notable difference lies in the playlist sizes; the “Millennium K-pop” playlist consists of 100 tracks, while “K-pop ON!” features 50 tracks. For a more balanced comparison, I expanded the "K-pop ON!" playlist to include more tracks released between 2023 and 2024. Both playlists also have a popularity threshold, with tracks requiring to exceed 50 for "K-pop ON!" and 40 for “Millennium K-pop,” ensuring that the tracks are representative of their respective time frames. In the end, my objective is to deepen my understanding of how K-pop has evolved by comparing the two playlists on Spotify, each representing different temporal frames - the millennium and the present.
+As an international student from South Korea, my passion for K-pop extends beyond the contemporary music of my time to include that of the preceding millennium. Over the years, I have observed transformative changes in K-pop, influenced by advancements in production techniques and the forces of globalization. Notably, the growing collaborations between K-pop and Western artists have resulted in a fusion of diverse musical genres. In particular, I anticipate [“Millennium K-pop”](https://open.spotify.com/playlist/2d9N60Iz8yzdsWLP1crgd2?si=647d25193c124a33) and [“K-pop ON!”](https://open.spotify.com/playlist/1y6ywhJxaBAjAQ6Ybmg0kg?si=b751e306a358445b) playlists to reveal distinct differences in musical components, including the tempo and rhythm, instrumentation trends, and melodic content. Upon reviewing the Spotify-curated playlists, I can conclude that both collections feature tracks that defined their respective eras. It is also important to acknowledge that both playlists maintain consistency by exclusively featuring music from K-pop groups without incorporating other genres like K-hip-hop or K-indie. However, a notable difference lies in the playlist sizes; the “Millennium K-pop” playlist consists of 100 tracks, while “K-pop ON!” features 50 tracks. For a more balanced comparison, I expanded the "K-pop ON!" playlist to include more tracks released between 2023 and 2024. Both playlists also have a popularity threshold, with tracks requiring to exceed 50 for "K-pop ON!" and 40 for “Millennium K-pop,” ensuring that the tracks are representative of their respective time frames. In the end, my objective is to deepen my understanding of how K-pop has evolved by comparing the two playlists on Spotify, each representing different temporal frames - the millennium and the present.
 
 Column
 ---------------------------------------------------------------------------------
-<iframe src="https://open.spotify.com/embed/playlist/37i9dQZF1DWUoY6Ih7vsxr?utm_source=generator" width="100%" height="380" frameBorder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+```{r}
+library(htmltools)
+div(
+  HTML('<iframe src="https://open.spotify.com/embed/playlist/2d9N60Iz8yzdsWLP1crgd2?utm_source=generator&theme=0" width="100%" height="380" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>')
+  )
+
+div(
+  HTML('<iframe src="https://open.spotify.com/embed/playlist/1y6ywhJxaBAjAQ6Ybmg0kg?utm_source=generator&theme=0" width="100%" height="380" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>')
+  )
+```
+
 
 
 Exploration
@@ -174,7 +186,7 @@ Column
 --------------------------------------------------------------------------------
 
 ### How does the use of pitches differ between 'Standing Next to You (2023)' and 'Tell Me (2007)?'
-When examining the chromagrams of two highly popular tracks from different playlists, the differences between the two become evident. "Standing Next to You" by Jungkook prominently features the pitch classes C#/Db, D, and A, while "Tell Me" by Wonder Girls includes C#/Db, F#/Gb, and B as its dominant pitch classes. Notably, "Standing Next to You" displays a more colorful chromagram, suggesting a diverse range of pitches and a potentially more complex harmonic structure. Furthermore, the track appears to have a clearer musical structure, with recurring patterns emphasizing its melodic motifs. Yet, it is important to acknolwedge that these insights are specific to the tracks "Standing Next to You" and "Tell Me" and should not be generalized to comparisons between music from different eras, such as the millennium and the present.
+When examining the chromagrams of two highly popular tracks from different playlists, the differences between the two become evident. "Standing Next to You" by Jungkook prominently features the pitch classes C#/Db, D, and A, while "Tell Me" by Wonder Girls includes C#/Db, F#/Gb, and B as its dominant pitch classes. Notably, "Standing Next to You" displays a more colorful chromagram, suggesting a diverse range of pitches and a potentially more complex harmonic structure. Furthermore, the track appears to have a clearer musical structure, with recurring patterns emphasizing its melodic motifs. Yet, it is important to acknowledge that these insights are specific to the tracks "Standing Next to You" and "Tell Me" and should not be generalized to comparisons between music from different eras, such as the millennium and the present.
 
 Self-Similarity Matrix (SSM)
 =================================================================================
@@ -353,7 +365,7 @@ kpop |>
   ggplot(aes(x = basis, y = value, fill = genre)) +
   geom_violin() +
   scale_fill_viridis_d() +
-  labs(x = "Spotify Timbre Coefficients", y = "", fill = "Genre")
+  labs(x = "Spotify Timbre Coefficients", y = "", fill = "Genre", title = "Average timbre coefficients in K-pop ON! and K-pop Millennium")
 ```
 
 Column
