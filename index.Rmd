@@ -114,13 +114,13 @@ In exploring the relationship between danceability and tempo within the playlist
 For a more detailed comparison between the two playlists, histograms were created to visualize the distribution of danceability and tempo. While danceability values remain relatively similar between the two playlists, there is a notable shift in tempo. In the Millennium playlist, there is a distinct preference for a specific tempo, whereas contemporary tracks display a more diverse range, resembling a more symmetrical distribution. Despite this difference, both playlists share a similar mode tempo of 120~130 beats per minute (bpm). One reason for this preference is that producers tend to adhere to the mainstream tempo that have previously gained popularity. Moreover, in the contemporary era of globalized music, K-pop producers have increased access to a wider range of musical styles via streaming platforms, enabling them to draw inspiration from different genres, such as Western music. As a result, modern K-pop consists of a broader spectrum of tempos, in contrast to the singular tempo preference observed in the Millennium era.
 
 
-Chromatogram
+Chromagram
 ==================================================================================
 
 Column
 ----------------------------------------------------------------------------------
 
-### Comparsion of two chromatograms
+### Comparsion of two chromagrams
 
 ```{r}
 jungkook <-
